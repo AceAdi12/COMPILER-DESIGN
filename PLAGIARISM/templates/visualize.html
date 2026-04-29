@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Compiler Pipeline — {{ submission.student_name }} — PlagiaScope</title>
+  <meta name="description" content="Step-by-step compiler pipeline visualization: Lexer, Tokens, Normalization, AST for {{ submission.student_name }}'s submission." />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/" class="navbar-brand">
+    <div class="navbar-icon">🔍</div>
+    <div>
+      <div class="navbar-title">PlagiaScope</div>
+      <div class="navbar-subtitle">Compiler Design Project</div>
+    </div>
+  </a>
+  <div class="navbar-links">
+    <a href="/" class="nav-link" id="nav-dashboard">📊 Dashboard</a>
+    <a href="/upload" class="nav-link" id="nav-upload">⬆️ Upload</a>
+  </div>
+</nav>
+
+<div class="page-wrapper">
+
+  <!-- ── Header ── -->
+  <div class="page-header animate-fade-in">
+    <div class="page-header-inner">
+      <div class="page-title-group">
+        <h1 class="page-title">🔬 Compiler Pipeline</h1>
+        <p class="page-subtitle">
+          Analyzing <strong style="color:var(--accent-cyan);">{{ submission.student_name }}</strong>
+          ({{ submission.filename }}) — visualizing each compilation stage
+        </p>
+      </div>
+      <div style="display:flex;gap:0.5rem;">
+        {% set pct = submission.plagiarism_percent %}
+        {% if pct > 70 %}
+          <span class="badge badge-high" style="font-size:0.95rem;padding:0.5rem 1rem;">🚨 {{ pct }}% Similarity</span>
+        {% elif pct > 40 %}
+          <span class="badge badge-medium" style="font-size:0.95rem;padding:0.5rem 1rem;">⚠️ {{ pct }}% Similarity</span>
+        {% else %}
+          <span class="badge badge-low" style="font-size:0.95rem;padding:0.5rem 1rem;">✅ {{ pct }}% Similarity</span>
+        {% endif %}
+        <a href="/" class="btn btn-secondary btn-sm">← Dashboard</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════
+       PIPELINE FLOW DIAGRAM
+  ═══════════════════════════ -->
+  <div class="card animate-fade-in" style="margin-bottom: 1.5rem;">
+    <div class="card-header">
+      <h3>🔄 Compilation Stages</h3>
+      <span style="font-size:0.8rem;color:var(--text-muted);">Hover each stage for details</span>
+    </div>
+    <div class="card-body">
+      <div class="pipeline">
+        <div class="pipeline-step" title="Raw source code submitted by student">
+          <div class="pipeline-step-icon">📝</div>
+          <div class="pipeline-step-label">Stage 1</div>
+          <div class="pipeline-step-title">Source Code</div>
+          <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.3rem;">{{ source | length }} chars</div>
+        </div>
+        <div class="pipeline-step" title="Python tokenize module converts source into token stream">
+          <div class="pipeline-step-icon">⚙️</div>
+          <div class="pipeline-step-label">Stage 2</div>
+          <div class="pipeline-step-title">Lexer / Tokenizer</div>
+          <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.3rem;">{{ raw_tokens | length }} tokens</div>
+        </div>
+        <div class="pipeline-step" title="Variable names → VAR, strings → STR, numbers → NUM">
+          <div class="pipeline-step-icon">🔄</div>
+          <div class="pipeline-step-label">Stage 3</div>
+          <div class="pipeline-step-title">Normalization</div>
+          <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.3rem;">{{ normalized_tokens | length }} symbols</div>
+        </div>
+        <div class="pipeline-step" title="Python ast module extracts structural pattern">
+          <div class="pipeline-step-icon">🌳</div>
+          <div class="pipeline-step-label">Stage 4</div>
+          <div class="pipeline-step-title">AST Analysis</div>
+          <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.3rem;">{{ ast_summary.total_nodes }} nodes</div>
+        </div>
+        <div class="pipeline-step" title="Computes Cosine Vector Similarity on token frequencies">
+          <div class="pipeline-step-icon">📐</div>
+          <div class="pipeline-step-label">Stage 5</div>
+          <div class="pipeline-step-title">Cosine Similarity</div>
+          <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.3rem;">{{ submission.plagiarism_percent }}% score</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════
+       TWO-COLUMN: Source | Tokens
+  ═══════════════════════════ -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+
+    <!-- Source Code -->
+    <div class="card animate-fade-in" style="animation-delay:0.1s;">
+      <div class="card-header">
+        <h3>📝 Source Code</h3>
+        <span style="font-size:0.8rem;color:var(--text-muted);">{{ source.splitlines()|length }} lines</span>
+      </div>
+      <div class="card-body">
+        <pre class="source-code">{{ source }}</pre>
+      </div>
+    </div>
+
+    <!-- Raw Token Stream -->
+    <div class="card animate-fade-in" style="animation-delay:0.15s;">
+      <div class="card-header">
+        <h3>⚙️ Token Stream</h3>
+        <span style="font-size:0.8rem;color:var(--text-muted);">{{ raw_tokens | length }} tokens</span>
+      </div>
+      <div class="card-body">
+        <div class="token-stream">
+          {% for tok in raw_tokens %}
+            {% set tc_class = {
+              'NAME': 'tc-NAME',
+              'OP': 'tc-OP',
+              'NUMBER': 'tc-NUMBER',
+              'STRING': 'tc-STRING',
+              'KEYWORD': 'tc-KEYWORD'
+            }.get(tok.type, 'tc-default') %}
+            {# Treat Python keywords as KEYWORD type visually #}
+            {% if tok.type == 'NAME' and tok.value in ['def','class','if','elif','else','for','while','return','import','from','in','and','or','not','True','False','None','try','except','finally','with','as','pass','break','continue','raise','yield','lambda','del','global','nonlocal','assert','is'] %}
+              <span class="token-chip tc-KEYWORD">
+                <span class="token-type-label">KW</span>
+                {{ tok.value }}
+              </span>
+            {% else %}
+              <span class="token-chip {{ tc_class }}">
+                <span class="token-type-label">{{ tok.type[:3] }}</span>
+                {{ tok.value | truncate(12, True, '…') }}
+              </span>
+            {% endif %}
+          {% endfor %}
+          {% if not raw_tokens %}
+            <span style="color:var(--text-muted);font-size:0.85rem;">No tokens — file may be empty or non-Python.</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════
+       Normalized Tokens + AST
+  ═══════════════════════════ -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+
+    <!-- Normalized Token Stream -->
+    <div class="card animate-fade-in" style="animation-delay:0.2s;">
+      <div class="card-header">
+        <h3>🔄 Normalized Tokens</h3>
+        <span style="font-size:0.8rem;color:var(--text-muted);">VAR/STR/NUM abstraction</span>
+      </div>
+      <div class="card-body">
+        <p style="font-size:0.82rem;margin-bottom:0.75rem;">Variable names → <code style="color:var(--accent-primary);">VAR</code>, strings → <code style="color:var(--accent-emerald);">STR</code>, numbers → <code style="color:var(--accent-amber);">NUM</code>. This makes the similarity check robust against renaming.</p>
+        <div class="norm-strip">
+          {% for tok in normalized_tokens %}
+            {% if tok == 'VAR' %}
+              <span class="norm-token" style="background:rgba(99,102,241,0.15);color:#a5b4fc;border-color:rgba(99,102,241,0.3);">VAR</span>
+            {% elif tok == 'STR' %}
+              <span class="norm-token" style="background:rgba(16,185,129,0.15);color:#6ee7b7;border-color:rgba(16,185,129,0.3);">STR</span>
+            {% elif tok == 'NUM' %}
+              <span class="norm-token" style="background:rgba(245,158,11,0.15);color:#fcd34d;border-color:rgba(245,158,11,0.3);">NUM</span>
+            {% else %}
+              <span class="norm-token">{{ tok }}</span>
+            {% endif %}
+          {% endfor %}
+          {% if not normalized_tokens %}
+            <span style="color:var(--text-muted);font-size:0.85rem;">No normalized tokens.</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- AST Summary -->
+    <div class="card animate-fade-in" style="animation-delay:0.25s;">
+      <div class="card-header">
+        <h3>🌳 AST Analysis</h3>
+        <span style="font-size:0.8rem;color:var(--text-muted);">Abstract Syntax Tree summary</span>
+      </div>
+      <div class="card-body">
+        <p style="font-size:0.82rem;margin-bottom:1rem;">Structural metrics extracted by Python's <code style="color:var(--accent-cyan);">ast</code> module — independent of formatting or naming.</p>
+        <div class="ast-grid">
+          <div class="ast-card">
+            <div class="ast-value" style="color:var(--accent-primary);">{{ ast_summary.functions }}</div>
+            <div class="ast-label">Functions</div>
+          </div>
+          <div class="ast-card">
+            <div class="ast-value" style="color:var(--accent-secondary);">{{ ast_summary.classes }}</div>
+            <div class="ast-label">Classes</div>
+          </div>
+          <div class="ast-card">
+            <div class="ast-value" style="color:var(--accent-cyan);">{{ ast_summary.loops }}</div>
+            <div class="ast-label">Loops</div>
+          </div>
+          <div class="ast-card">
+            <div class="ast-value" style="color:var(--accent-amber);">{{ ast_summary.conditions }}</div>
+            <div class="ast-label">Conditions</div>
+          </div>
+          <div class="ast-card">
+            <div class="ast-value" style="color:var(--accent-emerald);">{{ ast_summary.imports }}</div>
+            <div class="ast-label">Imports</div>
+          </div>
+          <div class="ast-card">
+            <div class="ast-value" style="color:var(--text-secondary);">{{ ast_summary.total_nodes }}</div>
+            <div class="ast-label">AST Nodes</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════
+       Token Frequency Chart
+  ═══════════════════════════ -->
+  <div class="card animate-fade-in" style="animation-delay:0.3s; margin-bottom:1.5rem;">
+    <div class="card-header">
+      <h3>📊 Token Frequency Distribution</h3>
+      <span style="font-size:0.8rem;color:var(--text-muted);">How many tokens of each type exist in the source</span>
+    </div>
+    <div class="card-body">
+      <div class="chart-container" style="height: 260px;">
+        <canvas id="token-freq-chart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════
+       Bottom Actions
+  ═══════════════════════════ -->
+  <div style="display:flex;gap:1rem;justify-content:flex-end;padding-bottom:2rem;">
+    <a href="{{ url_for('feedback_form', student_id=submission.student_id) }}" class="btn btn-secondary">💬 Add Feedback</a>
+    <a href="/" class="btn btn-primary">← Back to Dashboard</a>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  // Token frequency chart
+  const freqData = {{ token_freq | tojson }};
+  const labels = Object.keys(freqData);
+  const values = Object.values(freqData);
+
+  const colors = {
+    'NAME':    'rgba(99,102,241,0.8)',
+    'OP':      'rgba(244,63,94,0.8)',
+    'NUMBER':  'rgba(245,158,11,0.8)',
+    'STRING':  'rgba(16,185,129,0.8)',
+    'NEWLINE': 'rgba(148,163,184,0.5)',
+    'INDENT':  'rgba(148,163,184,0.5)',
+    'DEDENT':  'rgba(148,163,184,0.5)',
+  };
+
+  const bgColors = labels.map(l => colors[l] || 'rgba(139,92,246,0.7)');
+
+  const ctx = document.getElementById('token-freq-chart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Token Count',
+        data: values,
+        backgroundColor: bgColors,
+        borderColor: bgColors.map(c => c.replace('0.8','1').replace('0.5','0.8')),
+        borderWidth: 1,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(13,15,26,0.95)',
+          titleColor: '#f1f5f9',
+          bodyColor: '#94a3b8',
+          borderColor: 'rgba(255,255,255,0.1)',
+          borderWidth: 1,
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 11 } },
+          grid: { color: 'rgba(255,255,255,0.04)' },
+        },
+        y: {
+          ticks: { color: '#64748b' },
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          beginAtZero: true,
+        }
+      }
+    }
+  });
+})();
+</script>
+</body>
+</html>

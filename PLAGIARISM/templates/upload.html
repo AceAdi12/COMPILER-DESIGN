@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Upload Code — PlagiaScope</title>
+  <meta name="description" content="Upload your code file for plagiarism analysis." />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/" class="navbar-brand">
+    <div class="navbar-icon">🔍</div>
+    <div>
+      <div class="navbar-title">PlagiaScope</div>
+      <div class="navbar-subtitle">Compiler Design Project</div>
+    </div>
+  </a>
+  <div class="navbar-links">
+    <a href="/" class="nav-link" id="nav-dashboard">📊 Dashboard</a>
+    <a href="/upload" class="nav-link active" id="nav-upload">⬆️ Upload</a>
+  </div>
+</nav>
+
+<div class="page-wrapper">
+  <div class="upload-container">
+
+    <!-- Header -->
+    <div class="page-header animate-fade-in" style="text-align:center; display:block;">
+      <h1 class="page-title" style="-webkit-text-fill-color: unset; background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Submit Code</h1>
+      <p class="page-subtitle" style="margin-top:0.5rem;">Your file will be analyzed through the full compiler pipeline — Lexer → Tokens → AST → Cosine Vector similarity check</p>
+    </div>
+
+    <div class="card animate-fade-in" style="animation-delay:0.1s; padding: 2rem;">
+      <form method="POST" enctype="multipart/form-data" id="upload-form" novalidate>
+
+        <!-- Name -->
+        <div class="form-group">
+          <label class="form-label" for="student_name">👤 Student Name</label>
+          <input type="text" id="student_name" name="student_name"
+                 class="form-input"
+                 placeholder="Enter your full name"
+                 required autocomplete="name" />
+        </div>
+
+        <!-- ID -->
+        <div class="form-group">
+          <label class="form-label" for="student_id">🪪 Student ID</label>
+          <input type="text" id="student_id" name="student_id"
+                 class="form-input"
+                 placeholder="e.g. CS2023001"
+                 required />
+        </div>
+
+        <!-- File Drop Zone -->
+        <div class="form-group">
+          <label class="form-label">📎 Code File</label>
+          <div class="drop-zone" id="drop-zone">
+            <input type="file" id="code_file" name="code_file"
+                   accept=".py,.java,.c,.cpp,.js,.txt,.pdf" required />
+            <span class="drop-icon">📁</span>
+            <div class="drop-title">Drag & drop your file here</div>
+            <div class="drop-sub">or click to browse — .py .java .c .cpp .js .txt .pdf</div>
+            <div class="drop-file-name" id="drop-file-name"></div>
+          </div>
+        </div>
+
+        <!-- Pipeline Preview -->
+        <div style="background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.15); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.25rem;">
+          <p style="font-size:0.75rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: var(--accent-primary); margin-bottom:0.6rem;">🔬 Analysis Pipeline</p>
+          <div style="display: flex; align-items: center; font-size: 0.8rem; color: var(--text-muted); flex-wrap: wrap; gap: 0.3rem;">
+            <span style="background:rgba(255,255,255,0.05);padding:0.2rem 0.5rem;border-radius:4px;">📝 Source</span>
+            <span style="color:var(--accent-primary);">→</span>
+            <span style="background:rgba(255,255,255,0.05);padding:0.2rem 0.5rem;border-radius:4px;">⚙️ Tokenizer</span>
+            <span style="color:var(--accent-primary);">→</span>
+            <span style="background:rgba(255,255,255,0.05);padding:0.2rem 0.5rem;border-radius:4px;">🔄 Normalize</span>
+            <span style="color:var(--accent-primary);">→</span>
+            <span style="background:rgba(255,255,255,0.05);padding:0.2rem 0.5rem;border-radius:4px;">🌳 AST</span>
+            <span style="color:var(--accent-primary);">→</span>
+            <span style="background:rgba(255,255,255,0.05);padding:0.2rem 0.5rem;border-radius:4px;">📐 Cosine Score</span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full" id="submit-btn">
+          ⬆️ Analyze Submission
+        </button>
+
+      </form>
+    </div>
+
+    <div style="text-align: center; margin-top: 1.5rem;">
+      <a href="/" class="nav-link" style="display: inline-flex;">← Back to Dashboard</a>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('code_file');
+  const fileName  = document.getElementById('drop-file-name');
+  const submitBtn = document.getElementById('submit-btn');
+
+  function setFile(file) {
+    if (!file) return;
+    fileName.textContent = '✅ ' + file.name;
+    fileName.style.display = 'block';
+    dropZone.style.borderColor = 'var(--accent-emerald)';
+    dropZone.style.background  = 'rgba(16,185,129,0.06)';
+  }
+
+  fileInput.addEventListener('change', function() { setFile(this.files[0]); });
+
+  dropZone.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    this.classList.add('dragging');
+  });
+  dropZone.addEventListener('dragleave', function() {
+    this.classList.remove('dragging');
+  });
+  dropZone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    this.classList.remove('dragging');
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      fileInput.files = dt.files;
+      setFile(file);
+    }
+  });
+
+  // Submit loading state
+  document.getElementById('upload-form').addEventListener('submit', function() {
+    submitBtn.textContent = '⏳ Analyzing...';
+    submitBtn.disabled = true;
+  });
+})();
+</script>
+</body>
+</html>

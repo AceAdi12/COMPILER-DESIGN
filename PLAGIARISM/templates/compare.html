@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Compare: {{ sub1.student_name }} vs {{ sub2.student_name }} — PlagiaScope</title>
+  <meta name="description" content="Side-by-side token and code comparison between {{sub1.student_name}} and {{sub2.student_name}}." />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/" class="navbar-brand">
+    <div class="navbar-icon">🔍</div>
+    <div>
+      <div class="navbar-title">PlagiaScope</div>
+      <div class="navbar-subtitle">Compiler Design Project</div>
+    </div>
+  </a>
+  <div class="navbar-links">
+    <a href="/" class="nav-link" id="nav-dashboard">📊 Dashboard</a>
+  </div>
+</nav>
+
+<div class="page-wrapper">
+
+  <!-- Header -->
+  <div class="page-header animate-fade-in">
+    <div class="page-header-inner">
+      <div class="page-title-group">
+        <h1 class="page-title">↔️ Code Comparison</h1>
+        <p class="page-subtitle">
+          <span style="color:var(--accent-cyan);">{{ sub1.student_name }}</span>
+          &nbsp;vs&nbsp;
+          <span style="color:var(--accent-secondary);">{{ sub2.student_name }}</span>
+        </p>
+      </div>
+      <div>
+        {% if similarity > 70 %}
+          <span class="badge badge-high" style="font-size:1rem;padding:0.6rem 1.25rem;">🚨 {{ similarity }}% Similar</span>
+        {% elif similarity > 40 %}
+          <span class="badge badge-medium" style="font-size:1rem;padding:0.6rem 1.25rem;">⚠️ {{ similarity }}% Similar</span>
+        {% else %}
+          <span class="badge badge-low" style="font-size:1rem;padding:0.6rem 1.25rem;">✅ {{ similarity }}% Similar</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Similarity Gauge Card -->
+  <div class="card animate-fade-in" style="margin-bottom:1.5rem;">
+    <div class="card-body" style="display:flex;align-items:center;gap:2rem;flex-wrap:wrap;">
+      <!-- Ring gauge (drawn via canvas) -->
+      <div class="similarity-ring">
+        <div class="ring-chart">
+          <canvas id="gauge-chart" width="120" height="120"></canvas>
+          <div class="ring-value">{{ similarity }}%</div>
+        </div>
+        <div style="font-size:0.8rem;color:var(--text-muted);">Token Cosine Similarity</div>
+      </div>
+
+      <div style="flex:1;min-width:240px;">
+        <p style="font-size:0.9rem;margin-bottom:1rem;">
+          The similarity score is computed using <strong style="color:var(--accent-primary);">Cosine Vector Similarity</strong> algorithm applied to the frequencies of the <strong>normalized token streams</strong> of both files. This allows us to detect similar code structures even if they are slightly rearranged.
+        </p>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+          <div>
+            <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">{{ sub1.student_name }}</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.9rem;color:var(--accent-cyan);">{{ sub1.filename }}</div>
+            <div style="font-size:0.8rem;color:var(--text-muted);">{{ norm1|length }} normalized tokens</div>
+          </div>
+          <div style="color:var(--text-muted);align-self:center;font-size:1.5rem;">↔️</div>
+          <div>
+            <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">{{ sub2.student_name }}</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.9rem;color:var(--accent-secondary);">{{ sub2.filename }}</div>
+            <div style="font-size:0.8rem;color:var(--text-muted);">{{ norm2|length }} normalized tokens</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Side-by-side source code -->
+  <div class="compare-grid" style="margin-bottom:1.5rem;">
+    <div class="card animate-fade-in" style="animation-delay:0.1s;">
+      <div class="card-header">
+        <h3 style="color:var(--accent-cyan);">📄 {{ sub1.student_name }}</h3>
+        <span style="font-size:0.8rem;color:var(--text-muted);">{{ src1.splitlines()|length }} lines</span>
+      </div>
+      <div class="card-body">
+        <pre class="source-code">{{ src1 or '# File not found or empty' }}</pre>
+      </div>
+    </div>
+    <div class="card animate-fade-in" style="animation-delay:0.15s;">
+      <div class="card-header">
+        <h3 style="color:var(--accent-secondary);">📄 {{ sub2.student_name }}</h3>
+        <span style="font-size:0.8rem;color:var(--text-muted);">{{ src2.splitlines()|length }} lines</span>
+      </div>
+      <div class="card-body">
+        <pre class="source-code">{{ src2 or '# File not found or empty' }}</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Normalized token comparison -->
+  <div class="compare-grid" style="margin-bottom:1.5rem;">
+    <div class="card animate-fade-in" style="animation-delay:0.2s;">
+      <div class="card-header">
+        <h3>🔄 Normalized Tokens — {{ sub1.student_name }}</h3>
+      </div>
+      <div class="card-body">
+        <div class="norm-strip">
+          {% for tok in norm1 %}
+            {% if tok == 'VAR' %}
+              <span class="norm-token" style="background:rgba(99,102,241,0.15);color:#a5b4fc;">VAR</span>
+            {% elif tok == 'STR' %}
+              <span class="norm-token" style="background:rgba(16,185,129,0.15);color:#6ee7b7;">STR</span>
+            {% elif tok == 'NUM' %}
+              <span class="norm-token" style="background:rgba(245,158,11,0.15);color:#fcd34d;">NUM</span>
+            {% else %}
+              <span class="norm-token">{{ tok }}</span>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <div class="card animate-fade-in" style="animation-delay:0.25s;">
+      <div class="card-header">
+        <h3>🔄 Normalized Tokens — {{ sub2.student_name }}</h3>
+      </div>
+      <div class="card-body">
+        <div class="norm-strip">
+          {% for tok in norm2 %}
+            {% if tok == 'VAR' %}
+              <span class="norm-token" style="background:rgba(139,92,246,0.15);color:#c4b5fd;">VAR</span>
+            {% elif tok == 'STR' %}
+              <span class="norm-token" style="background:rgba(16,185,129,0.15);color:#6ee7b7;">STR</span>
+            {% elif tok == 'NUM' %}
+              <span class="norm-token" style="background:rgba(245,158,11,0.15);color:#fcd34d;">NUM</span>
+            {% else %}
+              <span class="norm-token" style="border-color:rgba(139,92,246,0.25);">{{ tok }}</span>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HTML Diff Table -->
+  <div class="card animate-fade-in" style="animation-delay:0.3s; margin-bottom:1.5rem;">
+    <div class="card-header">
+      <h3>📋 Line-by-Line Diff</h3>
+      <span style="font-size:0.8rem;color:var(--text-muted);">🟢 Added &nbsp; 🟡 Changed &nbsp; 🔴 Removed</span>
+    </div>
+    <div class="card-body" style="padding:0;">
+      <div class="diff-table-wrap">
+        {{ diff_table | safe }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom actions -->
+  <div style="display:flex;gap:0.75rem;justify-content:flex-end;padding-bottom:2rem;">
+    <a href="/visualize/{{ sub1.student_id }}" class="btn btn-secondary btn-sm">🔬 Pipeline: {{ sub1.student_name }}</a>
+    <a href="/visualize/{{ sub2.student_id }}" class="btn btn-secondary btn-sm">🔬 Pipeline: {{ sub2.student_name }}</a>
+    <a href="/" class="btn btn-primary">← Dashboard</a>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  const similarity = {{ similarity }};
+  const ctx = document.getElementById('gauge-chart').getContext('2d');
+
+  let color;
+  if (similarity > 70)      color = '#f43f5e';
+  else if (similarity > 40) color = '#f59e0b';
+  else                      color = '#10b981';
+
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      datasets: [{
+        data: [similarity, 100 - similarity],
+        backgroundColor: [color, 'rgba(255,255,255,0.05)'],
+        borderColor: [color, 'transparent'],
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: false,
+      cutout: '72%',
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      animation: { animateRotate: true, duration: 1000 },
+    }
+  });
+})();
+</script>
+</body>
+</html>

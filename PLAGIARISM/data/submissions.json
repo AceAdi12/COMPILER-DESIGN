@@ -1,0 +1,202 @@
+[
+    {
+        "student_name": "Khushi",
+        "student_id": "1",
+        "filename": "1.py",
+        "plagiarism_percent": 0,
+        "match_found": "None",
+        "feedback": "I'm happy with your submission"
+    },
+    {
+        "student_name": "khushbu",
+        "student_id": "2",
+        "filename": "1.py",
+        "plagiarism_percent": 100,
+        "match_found": "Khushi",
+        "feedback": "Submit other file "
+    },
+    {
+        "student_name": "manu",
+        "student_id": "3",
+        "filename": "2.py",
+        "plagiarism_percent": 12,
+        "match_found": "Khushi",
+        "feedback": ""
+    },
+    {
+        "student_name": "xyz",
+        "student_id": "4",
+        "filename": "3.py",
+        "plagiarism_percent": 12,
+        "match_found": "Khushi",
+        "feedback": ""
+    },
+    {
+        "student_name": "rst",
+        "student_id": "5",
+        "filename": "3.py",
+        "plagiarism_percent": 100,
+        "match_found": "xyz",
+        "feedback": ""
+    },
+    {
+        "student_name": "Aditya Gupta",
+        "student_id": "23021115",
+        "filename": "a.cpp",
+        "plagiarism_percent": 54,
+        "match_found": "Khushi",
+        "feedback": ""
+    },
+    {
+        "student_name": "Ayush",
+        "student_id": "23021116",
+        "filename": "ax.cpp",
+        "plagiarism_percent": 100,
+        "match_found": "Aditya Gupta",
+        "feedback": ""
+    },
+    {
+        "student_name": "Test User 1",
+        "student_id": "ID001",
+        "filename": "ax.cpp",
+        "plagiarism_percent": 100,
+        "match_found": "Aditya Gupta",
+        "feedback": ""
+    },
+    {
+        "student_name": "kehsav",
+        "student_id": "2021434",
+        "filename": "avs.cpp",
+        "plagiarism_percent": 0,
+        "match_found": "None",
+        "feedback": ""
+    },
+    {
+        "student_name": "Aditya Gupta",
+        "student_id": "239120",
+        "filename": "Plagiarism_proposal.pdf",
+        "plagiarism_percent": 12,
+        "match_found": "Khushi",
+        "feedback": ""
+    },
+    {
+        "student_name": "Aditya Gupta (Test Copy)",
+        "student_id": "999999",
+        "filename": "Plagiarism_proposal.pdf",
+        "plagiarism_percent": 100,
+        "match_found": "Aditya Gupta",
+        "feedback": "Test for PDF highlighting"
+    },
+    {
+        "student_name": "hd hidsj",
+        "student_id": "9293929",
+        "filename": "nvidia-learning-training course-catalog.pdf",
+        "plagiarism_percent": 0,
+        "match_found": "None",
+        "feedback": ""
+    },
+    {
+        "student_name": "Aditya Gupta",
+        "student_id": "23021115",
+        "filename": "adi (3).pdf",
+        "plagiarism_percent": 0,
+        "match_found": "None",
+        "feedback": ""
+    },
+    {
+        "student_name": "Alice",
+        "student_id": "1001",
+        "filename": "alice_report.pdf",
+        "plagiarism_percent": 0,
+        "match_found": "None",
+        "feedback": "Great original work."
+    },
+    {
+        "student_name": "Bob",
+        "student_id": "1002",
+        "filename": "bob_report.pdf",
+        "plagiarism_percent": 46,
+        "match_found": "Alice",
+        "feedback": "Warning: Detected copied paragraphs from Alice's report."
+    },
+    {
+        "student_name": "Rahul Sharma",
+        "student_id": "5001",
+        "filename": "long_original.pdf",
+        "plagiarism_percent": 0,
+        "match_found": "None",
+        "feedback": "15-page original document."
+    },
+    {
+        "student_name": "Priya Singh",
+        "student_id": "5002",
+        "filename": "long_copied.pdf",
+        "plagiarism_percent": 18,
+        "match_found": "Rahul Sharma",
+        "feedback": "Copied 3 pages from the original."
+    },
+    {
+        "student_name": "User A",
+        "student_id": "9001",
+        "filename": "user_a.pdf",
+        "plagiarism_percent": 0,
+        "match_found": "None",
+        "feedback": ""
+    },
+    {
+        "student_name": "User B",
+        "student_id": "9002",
+        "filename": "user_b.pdf",
+        "plagiarism_percent": 33,
+        "match_found": "User A",
+        "feedback": ""
+    },
+    {
+        "student_name": "Student X",
+        "student_id": "9003",
+        "filename": "student_x.pdf",
+        "plagiarism_percent": 0,
+        "match_found": "None",
+        "feedback": ""
+    },
+    {
+        "student_name": "Student Y",
+        "student_id": "9004",
+        "filename": "student_y.pdf",
+        "plagiarism_percent": 40,
+        "match_found": "Student X",
+        "feedback": ""
+    },
+    {
+        "student_name": "Master Author",
+        "student_id": "9005",
+        "filename": "master.pdf",
+        "plagiarism_percent": 0,
+        "match_found": "None",
+        "feedback": ""
+    },
+    {
+        "student_name": "Sneaky Student",
+        "student_id": "9006",
+        "filename": "student.pdf",
+        "plagiarism_percent": 2,
+        "match_found": "Master Author",
+        "feedback": ""
+    },
+    {
+        "student_name": "Professor Smith",
+        "student_id": "9007",
+        "filename": "master2.pdf",
+        "plagiarism_percent": 0,
+        "match_found": "None",
+        "feedback": ""
+    },
+    {
+        "student_name": "Super Sneaky Student",
+        "student_id": "9008",
+        "filename": "student2.pdf",
+        "plagiarism_percent": 3,
+        "match_found": "Professor Smith",
+        "feedback": ""
+    }
+]

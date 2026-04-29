@@ -1,0 +1,12 @@
+{
+  "css.validate": true,
+  "css.lint.validProperties": [],
+  "[html]": {
+    "editor.defaultFormatter": "vscode.html-language-features"
+  },
+  "files.associations": {
+    "*.html": "jinja-html"
+  },
+  "C_Cpp.intelliSenseEngine": "disabled",
+  "C_Cpp.errorSquiggles": "disabled"
+}

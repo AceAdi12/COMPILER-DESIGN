@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard — Compiler Design Plagiarism Detector</title>
+  <meta name="description" content="Real-time plagiarism detection dashboard using compiler-design techniques — tokenization, AST analysis and Cosine similarity." />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ── Navbar ── -->
+<nav class="navbar">
+  <a href="/" class="navbar-brand">
+    <div class="navbar-icon">🔍</div>
+    <div>
+      <div class="navbar-title">PlagiaScope</div>
+      <div class="navbar-subtitle">Compiler Design Project</div>
+    </div>
+  </a>
+  <div class="navbar-links">
+    <a href="/" class="nav-link active" id="nav-dashboard">📊 Dashboard</a>
+    <a href="/upload" class="nav-link" id="nav-upload">⬆️ Upload</a>
+  </div>
+</nav>
+
+<div class="page-wrapper">
+
+  <!-- ── Page Header ── -->
+  <div class="page-header animate-fade-in">
+    <div class="page-header-inner">
+      <div class="page-title-group">
+        <h1 class="page-title">Detection Dashboard</h1>
+        <p class="page-subtitle">Compiler-aware plagiarism analysis using Lexer → AST → Cosine Similarity pipeline</p>
+      </div>
+      <a href="/upload" class="btn btn-primary" id="upload-btn">
+        ⬆️ New Submission
+      </a>
+    </div>
+  </div>
+
+  <!-- ── Stats Grid ── -->
+  <div class="stats-grid animate-fade-in">
+    <div class="stat-card blue">
+      <div class="stat-icon blue">📄</div>
+      <div class="stat-value" id="stat-total">{{ stats.total }}</div>
+      <div class="stat-label">Total Submissions</div>
+    </div>
+    <div class="stat-card rose">
+      <div class="stat-icon rose">🚨</div>
+      <div class="stat-value" id="stat-flagged">{{ stats.flagged }}</div>
+      <div class="stat-label">Flagged (&gt;70%)</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-icon green">✅</div>
+      <div class="stat-value" id="stat-clean">{{ stats.total - stats.flagged }}</div>
+      <div class="stat-label">Clean Submissions</div>
+    </div>
+    <div class="stat-card amber">
+      <div class="stat-icon amber">📈</div>
+      <div class="stat-value" id="stat-avg">{{ stats.avg }}%</div>
+      <div class="stat-label">Average Similarity</div>
+    </div>
+  </div>
+
+  <!-- ── Chart + Table Row ── -->
+  <div style="display: grid; grid-template-columns: 1fr 300px; gap: 1rem; align-items: start;">
+
+    <!-- ── Main Table ── -->
+    <div class="card animate-fade-in">
+      <div class="card-header">
+        <h3>📋 Submissions</h3>
+        <div class="search-bar" style="margin: 0;">
+          <input type="text" id="search-input" class="search-input" placeholder="🔎 Search student..." style="min-width: 180px;" />
+        </div>
+      </div>
+      <div class="card-body" style="padding: 0;">
+        {% if submissions %}
+        <div class="table-wrapper" style="border: none; border-radius: 0;">
+          <table id="submissions-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Student Name</th>
+                <th>Student ID</th>
+                <th>Similarity</th>
+                <th>Matched With</th>
+                <th>Feedback</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for entry in submissions %}
+              <tr data-name="{{ entry.student_name | lower }}" data-id="{{ entry.student_id | lower }}">
+                <td style="color: var(--text-muted); font-size: 0.8rem;">{{ loop.index }}</td>
+                <td class="td-name">{{ entry.student_name }}</td>
+                <td class="td-id">{{ entry.student_id }}</td>
+                <td>
+                  {% set pct = entry.plagiarism_percent %}
+                  {% if pct > 70 %}
+                    {% set cls = "high" %}
+                  {% elif pct > 40 %}
+                    {% set cls = "medium" %}
+                  {% else %}
+                    {% set cls = "low" %}
+                  {% endif %}
+                  <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <div class="progress-bar-wrap">
+                      <div class="progress-bar-fill fill-{{ cls }}" style="width: {{ pct }}%;"></div>
+                    </div>
+                    <span class="badge badge-{{ cls }}">{{ pct }}%</span>
+                  </div>
+                </td>
+                <td class="td-match">{{ entry.match_found or '—' }}</td>
+                <td style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font-size: 0.85rem; font-style: italic;">
+                  {{ entry.feedback or 'No feedback yet' }}
+                </td>
+                <td>
+                  <div class="td-actions">
+                    <a href="/visualize/{{ entry.student_id }}" class="btn btn-secondary btn-sm" title="View compiler pipeline">🔬 Analyze</a>
+                    {% if entry.match_found and entry.match_found != 'None' and entry.filename.lower().endswith('.pdf') %}
+                    <a href="/report/{{ entry.student_id }}" class="btn btn-sm" style="background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.25);" title="Download Highlighted PDF Report">📥 PDF Report</a>
+                    {% endif %}
+                    {% if entry.student_id %}
+                    <a href="{{ url_for('feedback_form', student_id=entry.student_id) }}" class="btn btn-sm" style="background:rgba(6,182,212,0.12);color:#22d3ee;border:1px solid rgba(6,182,212,0.25);" title="Add/Edit feedback">💬</a>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-state-icon">📂</div>
+          <div class="empty-state-title">No submissions yet</div>
+          <p>Upload the first code file to get started.</p>
+          <br/>
+          <a href="/upload" class="btn btn-primary">⬆️ Upload Now</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ── Right Panel (Chart) ── -->
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+      <div class="card animate-fade-in">
+        <div class="card-header">
+          <h3>📊 Distribution</h3>
+        </div>
+        <div class="card-body">
+          <div class="chart-container" style="height: 200px;">
+            <canvas id="donut-chart"></canvas>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem;">
+            <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.82rem;">
+              <span style="width:12px;height:12px;border-radius:3px;background:#10b981;flex-shrink:0;"></span>
+              <span style="color:var(--text-muted);">Low (0–40%)</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.82rem;">
+              <span style="width:12px;height:12px;border-radius:3px;background:#f59e0b;flex-shrink:0;"></span>
+              <span style="color:var(--text-muted);">Medium (41–70%)</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.82rem;">
+              <span style="width:12px;height:12px;border-radius:3px;background:#f43f5e;flex-shrink:0;"></span>
+              <span style="color:var(--text-muted);">High (&gt;70%)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pipeline Info Card -->
+      <div class="card animate-fade-in">
+        <div class="card-body">
+          <p style="font-size:0.78rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.75rem;">🔬 Detection Pipeline</p>
+          <div style="display:flex;flex-direction:column;gap:0.5rem;">
+            {% set steps = [('📝', 'Source Code'), ('⚙️', 'Lexer/Tokenizer'), ('🔄', 'Normalization'), ('🌳', 'AST Analysis'), ('📐', 'Cosine Similarity')] %}
+            {% for icon, label in steps %}
+            <div style="display:flex;align-items:center;gap:0.6rem;font-size:0.83rem;">
+              <span>{{ icon }}</span>
+              <span style="color:var(--text-secondary);">{{ label }}</span>
+              {% if not loop.last %}<span style="margin-left:auto;color:var(--accent-primary);font-size:0.7rem;">↓</span>{% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Chart.js init -->
+<script>
+(function() {
+  const ctx = document.getElementById('donut-chart')?.getContext('2d');
+  if (!ctx) return;
+
+  fetch('/api/stats').then(r => r.json()).then(data => {
+    const b = data.buckets;
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Low', 'Medium', 'High'],
+        datasets: [{
+          data: [b.low, b.medium, b.high],
+          backgroundColor: ['rgba(16,185,129,0.8)', 'rgba(245,158,11,0.8)', 'rgba(244,63,94,0.8)'],
+          borderColor: ['#10b981', '#f59e0b', '#f43f5e'],
+          borderWidth: 2,
+          hoverOffset: 8,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(13,15,26,0.9)',
+            titleColor: '#f1f5f9',
+            bodyColor: '#94a3b8',
+            borderColor: 'rgba(255,255,255,0.1)',
+            borderWidth: 1,
+          }
+        }
+      }
+    });
+  });
+
+  // Search filter
+  const searchInput = document.getElementById('search-input');
+  const table = document.getElementById('submissions-table');
+  if (searchInput && table) {
+    searchInput.addEventListener('input', function() {
+      const q = this.value.toLowerCase();
+      table.querySelectorAll('tbody tr').forEach(row => {
+        const name = row.dataset.name || '';
+        const id = row.dataset.id || '';
+        row.style.display = (name.includes(q) || id.includes(q)) ? '' : 'none';
+      });
+    });
+  }
+})();
+</script>
+</body>
+</html>

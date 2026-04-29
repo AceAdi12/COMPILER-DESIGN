@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Feedback — PlagiaScope</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/" class="navbar-brand">
+    <div class="navbar-icon">🔍</div>
+    <div>
+      <div class="navbar-title">PlagiaScope</div>
+      <div class="navbar-subtitle">Compiler Design Project</div>
+    </div>
+  </a>
+  <div class="navbar-links">
+    <a href="/" class="nav-link" id="nav-home">📊 Dashboard</a>
+  </div>
+</nav>
+
+<div class="page-wrapper">
+  <div class="upload-container">
+
+    <div class="page-header animate-fade-in" style="text-align:center;display:block;">
+      <h1 class="page-title" style="background: linear-gradient(135deg, #06b6d4, #8b5cf6); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">Submit Feedback</h1>
+      <p class="page-subtitle" style="margin-top:0.5rem;">
+        {% if submission %}
+          Providing feedback for <strong style="color:var(--accent-cyan);">{{ submission.student_name }}</strong>
+          (ID: <code style="color:var(--text-muted);">{{ student_id }}</code>)
+        {% else %}
+          Student ID: <code style="color:var(--text-muted);">{{ student_id }}</code>
+        {% endif %}
+      </p>
+    </div>
+
+    <!-- Submission info if available -->
+    {% if submission %}
+    <div class="card animate-fade-in" style="animation-delay:0.05s; margin-bottom:1rem;">
+      <div class="card-body" style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">File</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.9rem;color:var(--accent-cyan);">{{ submission.filename }}</div>
+        </div>
+        <div>
+          <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">Similarity</div>
+          {% set pct = submission.plagiarism_percent %}
+          {% if pct > 70 %}
+            <span class="badge badge-high">{{ pct }}%</span>
+          {% elif pct > 40 %}
+            <span class="badge badge-medium">{{ pct }}%</span>
+          {% else %}
+            <span class="badge badge-low">{{ pct }}%</span>
+          {% endif %}
+        </div>
+        <div>
+          <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">Matched With</div>
+          <div style="color:var(--accent-primary);font-weight:600;">{{ submission.match_found or '—' }}</div>
+        </div>
+        <div style="margin-left:auto;">
+          <a href="/visualize/{{ submission.student_id }}" class="btn btn-secondary btn-sm">🔬 View Pipeline</a>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card animate-fade-in" style="animation-delay:0.1s; padding: 2rem;">
+      <form method="POST" id="feedback-form" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="feedback">💬 Teacher Feedback</label>
+          <textarea id="feedback" name="feedback"
+                    class="form-input form-textarea"
+                    placeholder="Write detailed feedback here… e.g. 'The code structure is too similar to another submission. Please verify originality.'"
+                    required>{% if submission %}{{ submission.feedback or '' }}{% endif %}</textarea>
+        </div>
+
+        <div style="display:flex;gap:0.75rem;">
+          <button type="submit" class="btn btn-primary" style="flex:1;" id="fb-submit-btn">💬 Submit Feedback</button>
+          <a href="/" class="btn btn-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+
+    <div style="text-align:center; margin-top:1.5rem;">
+      <a href="/" class="nav-link" style="display:inline-flex;">← Back to Dashboard</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('feedback-form').addEventListener('submit', function() {
+    const btn = document.getElementById('fb-submit-btn');
+    btn.textContent = '⏳ Saving...';
+    btn.disabled = true;
+  });
+</script>
+</body>
+</html>
